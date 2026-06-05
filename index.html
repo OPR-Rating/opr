@@ -364,7 +364,15 @@ function submitMatch() {
   submitBtn.disabled = true;
 
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby1PopKBjuq7WNQJ6Gj8750GdCBGzU-vkwUMCGoxzt0niYI7iRXQi6TjYl04sFmoRTI/exec';
-  const payload = {date, type, t1p1, t1p2, t1sets: parseInt(t1sets), t1games: parseInt(t1games), t2p1, t2p2, t2sets: parseInt(t2sets), t2games: parseInt(t2games)};
+  const sets = parseInt(document.getElementById("setsPlayed").value);
+  const setScores = {};
+  for (let s = 1; s <= 3; s++) {
+    const t1el = document.getElementById("s"+s+"t1");
+    const t2el = document.getElementById("s"+s+"t2");
+    setScores["set"+s+"t1"] = (s <= sets && t1el) ? (parseInt(t1el.value) || "") : "";
+    setScores["set"+s+"t2"] = (s <= sets && t2el) ? (parseInt(t2el.value) || "") : "";
+  }
+  const payload = {date, type, t1p1, t1p2, t1sets: parseInt(t1sets), t1games: parseInt(t1games), t2p1, t2p2, t2sets: parseInt(t2sets), t2games: parseInt(t2games), ...setScores};
 
   fetch(SCRIPT_URL, {
     method: 'POST',
@@ -382,11 +390,9 @@ function submitMatch() {
        <strong>Result:</strong> ${t1sets}-${t2sets} sets (${t1games}-${t2games} games)<br><br>
        <span style="font-size:12px;color:#888;">
        Written to Google Sheet:<br>
-       Col B: ${date} | Col C: ${type}<br>
-       Col D: ${t1p1} | Col E: ${t1p2}<br>
-       Col F: ${t1sets} | Col G: ${t1games}<br>
-       Col H: ${t2p1} | Col I: ${t2p2}<br>
-       Col J: ${t2sets} | Col K: ${t2games}
+       ${t1p1} & ${t1p2} vs ${t2p1} & ${t2p2}<br>
+       ${Array.from({length: sets}, (_,i) => `Set ${i+1}: ${setScores['set'+(i+1)+'t1']}-${setScores['set'+(i+1)+'t2']}`).join(' | ')}<br>
+       Result: ${t1sets}-${t2sets} sets (${t1games}-${t2games} games)
        </span>`;
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('screen5').classList.add('active');
