@@ -409,13 +409,21 @@ function submitMatch() {
 }
 
 function resetForm() {
-  document.getElementById('matchDate').value = '';
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('matchDate').value = today;
   document.getElementById('matchType').value = '';
   document.getElementById('setsPlayed').value = '';
   ['t1p1','t1p2','t2p1','t2p2'].forEach(id => {
     document.getElementById(id).innerHTML = '<option value="">Select player...</option>';
   });
   document.getElementById('scoresContainer').innerHTML = '';
+  document.getElementById('resultContainer').innerHTML = '';
+  const submitBtn = document.querySelector('#screen4 .btn-success');
+  if (submitBtn) {
+    submitBtn.textContent = '\u2713 Submit match';
+    submitBtn.disabled = false;
+  }
+  document.querySelectorAll('.error-msg').forEach(e => e.style.display = 'none');
   goToScreen(1);
 }
 
