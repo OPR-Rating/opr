@@ -179,8 +179,57 @@
 </div>
 
 <script>
-const MEN = ["Alex Thomson","Andre Farrell","Andrew van Rensburg","Anthony Geldard","Arlin","Baron Wang","Bartjan Hooft","Benji","Billy Howes","Bonke","Brian Scott","Bruce Simelane","Carlos Rego","Charles Bethal","Chas Prettejohn","Chris Jackson","Cj Mentz","Colin Lovely","Conrad Chester","Coolant","Daniel Toro","Daryl McKenzie","Dean Wolverson","Derick Chester","Didi Hou","Eerfaan Dada","Graeme Guthrie","Grant Goldstone","Henry Jian","Ian Boyd","Ian McLoed","James Howes","Jeff Tseng","Jeremy Boyd","Jody Foss","Joe Roques","Khaya","Kim Roques","King Liu","Leo Chen","Luciano Ferreira","Mark Hunter","Matt Sprague","Mike Cutting","Mike Irwin","Mike Roach","Neil von Wissell","Phil Mayhew","Pierre Crous","Richard Cunningham","Richard Ferenczy","Richard Jarvis","Rob Jupp","Rob Reilly","Robbie James","Robert Chester","Roberto Russo","Ruan Beylefeld","Sandeep","Tarun","Sholto","Siya","Sizwe","Steve Packard","Stuart Hulley","Thulani","Tim Bertrand","Ward Young","William Lorentz","Wyn Evans"];
-const LADIES = ["Ally James","Angel","Angie lee","Anna Boyd","Ariel Liu","Bridget Farrell","Bron Evans","Carmen Guthrie","Charlene","Chereen Thomson","Chloe Thorne","Daniella Brink","Debbie Cutting","Debbie Hulley","Elmi Chester","Estelle Hamer","Hedy Hsu","Inge janse van Vuuren","Jeanine Van Wyk","Jen Boyd","Jen Sprague","Jess Hooft","Judy Curry","Judy Palmer","Julia Hulley","June McKenzie","Kate Reilly","Kerry Howes","Kim Nisbit","Kirsten Chester","Kirstie van Rensburg","Lucy McKenzie","Marisa Edwards","Mieka","Mishkah","Nadia Dada","Paloma Jupp","Philly","Rachel Bertrand","Robs Roques","Robyn","Robyn Jarvis","Sally James","Sam Farrell","Sarah Johnson","Seugnet","Shanni Chang","SJ Thomson","Stephanie Lin","Tina Lovely","Tracy McKenzie","Vanessa Jackson","Verne Von Wissell","Wendy Reed"];
+
+
+
+// Fallback hardcoded lists
+const MEN_FALLBACK = ["Alex Thomson","Andre Farrell","Andrew van Rensburg","Anthony Geldard","Arlin","Baron Wang","Bartjan Hooft","Benji","Billy Howes","Bonke","Brian Scott","Bruce Simelane","Carlos Rego","Charles Bethal","Chas Prettejohn","Chris Jackson","Cj Mentz","Colin Lovely","Conrad Chester","Coolant","Daniel Toro","Daryl McKenzie","Dean Wolverson","Derick Chester","Didi Hou","Eerfaan Dada","Graeme Guthrie","Grant Goldstone","Henry Jian","Ian Boyd","Ian McLoed","James Howes","Jeff Tseng","Jeremy Boyd","Jody Foss","Joe Roques","Khaya","Kim Roques","King Liu","Leo Chen","Luciano Ferreira","Mark Hunter","Matt Sprague","Mike Cutting","Mike Irwin","Mike Roach","Neil von Wissell","Phil Mayhew","Pierre Crous","Richard Cunningham","Richard Ferenczy","Richard Jarvis","Rob Jupp","Rob Reilly","Robbie James","Robert Chester","Roberto Russo","Ruan Beylefeld","Sandeep","Tarun","Sholto","Siya","Sizwe","Steve Packard","Stuart Hulley","Thulani","Tim Bertrand","Ward Young","William Lorentz","Wyn Evans"];
+const LADIES_FALLBACK = ["Ally James","Angel","Angie lee","Anna Boyd","Ariel Liu","Bridget Farrell","Bron Evans","Carmen Guthrie","Charlene","Chereen Thomson","Chloe Thorne","Daniella Brink","Debbie Cutting","Debbie Hulley","Elmi Chester","Estelle Hamer","Hedy Hsu","Inge janse van Vuuren","Jeanine Van Wyk","Jen Boyd","Jen Sprague","Jess Hooft","Judy Curry","Judy Palmer","Julia Hulley","June McKenzie","Kate Reilly","Kerry Howes","Kim Nisbit","Kirsten Chester","Kirstie van Rensburg","Lucy McKenzie","Marisa Edwards","Mieka","Mishkah","Nadia Dada","Paloma Jupp","Philly","Rachel Bertrand","Robs Roques","Robyn","Robyn Jarvis","Sally James","Sam Farrell","Sarah Johnson","Seugnet","Shanni Chang","SJ Thomson","Stephanie Lin","Tina Lovely","Tracy McKenzie","Vanessa Jackson","Verne Von Wissell","Wendy Reed"];
+
+let MEN = [...MEN_FALLBACK];
+let LADIES = [...LADIES_FALLBACK];
+
+const PLAYERS_URL = 'https://docs.google.com/spreadsheets/d/1EaG4s552Dm9C7CMrtVNzetaV_crxG0i4ksIfg3h2zZc/export?format=csv&gid=1369725888';
+
+async function loadPlayers() {
+  try {
+    const response = await fetch(PLAYERS_URL);
+    const text = await response.text();
+    const rows = text.trim().split('\n').slice(1);
+    const newMen = [];
+    const newLadies = [];
+    rows.forEach(row => {
+      // Robust CSV parser - handles quoted fields
+      const cols = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < row.length; i++) {
+        const ch = row[i];
+        if (ch === '"') {
+          inQuotes = !inQuotes;
+        } else if (ch === ',' && !inQuotes) {
+          cols.push(current.trim());
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      cols.push(current.trim());
+      const name = cols[0] ? cols[0].trim().replace(/^"|"$/g, '').trim() : '';
+      const gender = cols[1] ? cols[1].trim().replace(/^"|"$/g, '').trim() : '';
+      if (name && name !== 'Name') {
+        if (gender === 'M') newMen.push(name);
+        else if (gender === 'F') newLadies.push(name);
+      }
+    });
+    if (newMen.length > 0 || newLadies.length > 0) {
+      MEN = newMen.sort((a,b) => a.localeCompare(b));
+      LADIES = newLadies.sort((a,b) => a.localeCompare(b));
+    }
+  } catch(err) {
+    console.log('Using fallback player list');
+  }
+}
 
 function getPlayerList(type) {
   if (type === "Men's") return MEN;
@@ -427,9 +476,10 @@ function resetForm() {
   goToScreen(1);
 }
 
-window.onload = function() {
+window.onload = async function() {
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('matchDate').value = today;
+  await loadPlayers();
 };
 </script>
 </body>
